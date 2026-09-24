@@ -1,0 +1,155 @@
+// Cyber 17 Official Certificate Platform - Prisma Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  CERTIFICATE_MANAGER
+  VIEWER
+}
+
+enum CertificateStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+model Admin {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          AdminRole @default(ADMIN)
+  isActive      Boolean   @default(true)
+  mfaEnabled    Boolean   @default(false)
+  mfaSecret     String?
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  auditLogs     AuditLog[]
+  certificates  Certificate[] @relation("IssuedBy")
+  revokedCerts  Certificate[] @relation("RevokedBy")
+
+  @@index([email])
+  @@index([role])
+}
+
+model Recipient {
+  id            String    @id @default(cuid())
+  fullName      String
+  username      String?
+  userId        String?
+  profileImage  String?   // path to uploaded image
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  certificates  Certificate[]
+
+  @@index([fullName])
+  @@index([username])
+  @@index([userId])
+}
+
+model CertificateType {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  certificates Certificate[]
+}
+
+model Certificate {
+  id              String            @id @default(cuid())
+  certificateId   String            @unique // e.g. C17-X8K4-92PQ-7M2A
+  title           String
+  description     String?
+  courseProgram   String?
+  issueDate       DateTime
+  expiryDate      DateTime?
+  status          CertificateStatus @default(ACTIVE)
+  revokedAt       DateTime?
+  revokeReason    String?
+  qrCodePath      String?           // path to QR image
+  verificationUrl String
+
+  // Issuer
+  issuedByOrg     String            @default("Cyber 17 Official")
+  authorizedBy    String?
+  signaturePath   String?
+
+  // Relations
+  recipientId     String
+  recipient       Recipient         @relation(fields: [recipientId], references: [id])
+  typeId          String?
+  type            CertificateType?  @relation(fields: [typeId], references: [id])
+  issuedByAdminId String?
+  issuedByAdmin   Admin?            @relation("IssuedBy", fields: [issuedByAdminId], references: [id])
+  revokedByAdminId String?
+  revokedByAdmin  Admin?            @relation("RevokedBy", fields: [revokedByAdminId], references: [id])
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  verificationLogs VerificationLog[]
+
+  @@index([certificateId])
+  @@index([status])
+  @@index([issueDate])
+  @@index([recipientId])
+}
+
+model VerificationLog {
+  id              String   @id @default(cuid())
+  certificateId   String?
+  certificate     Certificate? @relation(fields: [certificateId], references: [id])
+  result          String   // VALID, NOT_FOUND, REVOKED, EXPIRED, INVALID
+  ipAddress       String?  // hashed or limited for privacy
+  userAgent       String?
+  timestamp       DateTime @default(now())
+
+  @@index([certificateId])
+  @@index([result])
+  @@index([timestamp])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String?
+  admin       Admin?   @relation(fields: [adminId], references: [id])
+  action      String
+  targetType  String?  // Certificate, Admin, Setting
+  targetId    String?
+  details     String?  // JSON string of non-sensitive details
+  ipAddress   String?
+  timestamp   DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([timestamp])
+}
+
+model CertificateTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  layoutJson  String?  // template config
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
