@@ -1,11 +1,11 @@
-// Cyber 17 Official Certificate Platform - Prisma Schema
+// Cyber 17 Official Certificate Platform - Prisma Schema (PostgreSQL / Neon)
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -69,34 +69,34 @@ model CertificateType {
 }
 
 model Certificate {
-  id              String            @id @default(cuid())
-  certificateId   String            @unique
-  title           String
-  description     String?
-  courseProgram   String?
-  issueDate       DateTime
-  expiryDate      DateTime?
-  status          CertificateStatus @default(ACTIVE)
-  revokedAt       DateTime?
-  revokeReason    String?
-  qrCodePath      String?
-  verificationUrl String
+  id               String            @id @default(cuid())
+  certificateId    String            @unique
+  title            String
+  description      String?
+  courseProgram    String?
+  issueDate        DateTime
+  expiryDate       DateTime?
+  status           CertificateStatus @default(ACTIVE)
+  revokedAt        DateTime?
+  revokeReason     String?
+  qrCodePath       String?
+  verificationUrl  String
 
-  issuedByOrg     String            @default("Cyber 17 Official")
-  authorizedBy    String?
-  signaturePath   String?
+  issuedByOrg      String            @default("Cyber 17 Official")
+  authorizedBy     String?
+  signaturePath    String?
 
-  recipientId     String
-  recipient       Recipient         @relation(fields: [recipientId], references: [id])
-  typeId          String?
-  type            CertificateType?  @relation(fields: [typeId], references: [id])
-  issuedByAdminId String?
-  issuedByAdmin   Admin?            @relation("IssuedBy", fields: [issuedByAdminId], references: [id])
+  recipientId      String
+  recipient        Recipient         @relation(fields: [recipientId], references: [id])
+  typeId           String?
+  type             CertificateType?  @relation(fields: [typeId], references: [id])
+  issuedByAdminId  String?
+  issuedByAdmin    Admin?            @relation("IssuedBy", fields: [issuedByAdminId], references: [id])
   revokedByAdminId String?
-  revokedByAdmin  Admin?            @relation("RevokedBy", fields: [revokedByAdminId], references: [id])
+  revokedByAdmin   Admin?            @relation("RevokedBy", fields: [revokedByAdminId], references: [id])
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   verificationLogs VerificationLog[]
 
@@ -107,13 +107,13 @@ model Certificate {
 }
 
 model VerificationLog {
-  id              String   @id @default(cuid())
-  certificateId   String?
-  certificate     Certificate? @relation(fields: [certificateId], references: [id])
-  result          String
-  ipAddress       String?
-  userAgent       String?
-  timestamp       DateTime @default(now())
+  id            String       @id @default(cuid())
+  certificateId String?
+  certificate   Certificate? @relation(fields: [certificateId], references: [id])
+  result        String
+  ipAddress     String?
+  userAgent     String?
+  timestamp     DateTime     @default(now())
 
   @@index([certificateId])
   @@index([result])
@@ -121,15 +121,15 @@ model VerificationLog {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  adminId     String?
-  admin       Admin?   @relation(fields: [adminId], references: [id])
-  action      String
-  targetType  String?
-  targetId    String?
-  details     String?
-  ipAddress   String?
-  timestamp   DateTime @default(now())
+  id         String   @id @default(cuid())
+  adminId    String?
+  admin      Admin?   @relation(fields: [adminId], references: [id])
+  action     String
+  targetType String?
+  targetId   String?
+  details    String?
+  ipAddress  String?
+  timestamp  DateTime @default(now())
 
   @@index([adminId])
   @@index([action])
