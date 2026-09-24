@@ -1,6 +1,7 @@
 // Cyber 17 Official Certificate Platform - Prisma Schema
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -47,7 +48,7 @@ model Recipient {
   fullName      String
   username      String?
   userId        String?
-  profileImage  String?   // path to uploaded image
+  profileImage  String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -69,7 +70,7 @@ model CertificateType {
 
 model Certificate {
   id              String            @id @default(cuid())
-  certificateId   String            @unique // e.g. C17-X8K4-92PQ-7M2A
+  certificateId   String            @unique
   title           String
   description     String?
   courseProgram   String?
@@ -78,15 +79,13 @@ model Certificate {
   status          CertificateStatus @default(ACTIVE)
   revokedAt       DateTime?
   revokeReason    String?
-  qrCodePath      String?           // path to QR image
+  qrCodePath      String?
   verificationUrl String
 
-  // Issuer
   issuedByOrg     String            @default("Cyber 17 Official")
   authorizedBy    String?
   signaturePath   String?
 
-  // Relations
   recipientId     String
   recipient       Recipient         @relation(fields: [recipientId], references: [id])
   typeId          String?
@@ -111,8 +110,8 @@ model VerificationLog {
   id              String   @id @default(cuid())
   certificateId   String?
   certificate     Certificate? @relation(fields: [certificateId], references: [id])
-  result          String   // VALID, NOT_FOUND, REVOKED, EXPIRED, INVALID
-  ipAddress       String?  // hashed or limited for privacy
+  result          String
+  ipAddress       String?
   userAgent       String?
   timestamp       DateTime @default(now())
 
@@ -126,9 +125,9 @@ model AuditLog {
   adminId     String?
   admin       Admin?   @relation(fields: [adminId], references: [id])
   action      String
-  targetType  String?  // Certificate, Admin, Setting
+  targetType  String?
   targetId    String?
-  details     String?  // JSON string of non-sensitive details
+  details     String?
   ipAddress   String?
   timestamp   DateTime @default(now())
 
@@ -141,7 +140,7 @@ model CertificateTemplate {
   id          String   @id @default(cuid())
   name        String
   description String?
-  layoutJson  String?  // template config
+  layoutJson  String?
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
